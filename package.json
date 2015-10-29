@@ -1,0 +1,20 @@
+{
+  "name": "nrtv-dispatcher",
+  "version": "0.0.0",
+  "description": "manage a queue of workers and work to do",
+  "main": "dispatcher.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/erikpukinskis/nrtv-dispatcher.git"
+  },
+  "dependencies": {
+    "nrtv-library": "*"
+  },
+  "scripts": {
+    "test": "node test.js"
+  },
+  "devDependencies": {
+    "nrtv-test": "*"
+  },
+  "license": "ISC"
+}
