@@ -1,7 +1,7 @@
 var library = require("nrtv-library")(require)
 
 module.exports = library.export(
-  "dispatcher",
+  "nrtv-dispatcher",
   [library.collective({})],
   function(collective) {
     function Dispatcher() {
