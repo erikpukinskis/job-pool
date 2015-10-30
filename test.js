@@ -164,9 +164,9 @@ test.using(
 
     waiter.addTask(
       function(minion) {
-        minion.report("t1 just you wait..")
+        minion.report("just you wait..")
       }, function report(message, minion) {
-        expect(message).to.equal("t1 just you wait..tweety did it!")
+        expect(message).to.equal("just you wait..tweety did it!")
         expect(tweetyLog).to.have.members(["perch"])
         done.ish("minion took first job")
         addAFreshJob()
@@ -201,9 +201,9 @@ test.using(
     function continueWithTweety() {
       waiter.addTask(
         function(minion) {
-          minion.report("t2")
+          minion.report()
         },
-        function(message, another, release) {
+        function() {
           expect(tweetyLog).to.have.members(["perch", "cage"])
           done.ish("first minion continued with state preserved")
           oneMoreTweetyJob()
@@ -226,7 +226,7 @@ test.using(
 
     function releaseTweety() {
       sylvester.quit()
-      waiter.release()
+      waiter.resign()
       addAFreshTask()
     }
 

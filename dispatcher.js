@@ -110,7 +110,7 @@ module.exports = library.export(
             
             this.dispatcher.addTask(task)
           },
-          release: function() {
+          resign: function() {
             centralDispatch.requestWork(this.worker)
           },
           getWorker: function() {
