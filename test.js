@@ -1,5 +1,7 @@
 var test = require("nrtv-test")(require)
 
+// test.only("worker waits")
+
 test.using(
   "adding tasks while multiple minions do work",
   ["./"],
@@ -114,5 +116,136 @@ test.using(
         task.func.apply(null, [task.callback].concat(task.args))
       }
     )
+  }
+)
+
+
+test.using(
+  "worker waits",
+  ["../dispatcher"],
+  function(expect, done, Dispatcher) {
+
+    var dispatcher = new Dispatcher()
+
+    var tweetyFrame = ["perch", "cage", "cat"]
+    var tweetyLog = []
+
+    var tweety = dispatcher.requestWork(
+      function(task) {
+
+        if (task.clean) {
+          tweetyLog = []
+        }
+
+        tweetyLog.push(
+          tweetyFrame[tweetyLog.length]
+        )
+
+        task.func({
+          report: function(message) {
+            task.callback(message+"tweety did it!")
+          }
+        })
+      }
+    )
+
+    var sylvester = dispatcher
+    .requestWork(function(task) {
+
+      task.func({
+        report: function(message) {
+          task.callback(message+"meow")
+        }
+      })
+
+    })
+
+    var waiter = dispatcher.retainWorker()
+
+    waiter.addTask(
+      function(minion) {
+        minion.report("t1 just you wait..")
+      }, function report(message, minion) {
+        expect(message).to.equal("t1 just you wait..tweety did it!")
+        expect(tweetyLog).to.have.members(["perch"])
+        done.ish("minion took first job")
+        addAFreshJob()
+      })
+
+    function scheming(minion) {
+      minion.report("fruitless scheming..")
+    }
+
+    function addAFreshJob() {
+      dispatcher.addTask(
+        scheming,
+        function(message) {
+          expect(message).to.equal("fruitless scheming..meow")
+          done.ish("other minion took second job")
+          addAnotherFreshJob()
+        }
+      )
+    }
+
+    function addAnotherFreshJob() {
+      dispatcher.addTask(
+        scheming,
+        function(message) {
+          expect(message).to.equal("fruitless scheming..meow")
+          done.ish("first one still waiting")
+          continueWithTweety()
+        }
+      )
+    }
+
+    function continueWithTweety() {
+      waiter.addTask(
+        function(minion) {
+          minion.report("t2")
+        },
+        function(message, another, release) {
+          expect(tweetyLog).to.have.members(["perch", "cage"])
+          done.ish("first minion continued with state preserved")
+          oneMoreTweetyJob()
+        }
+      )
+    }
+
+    function oneMoreTweetyJob() {
+      waiter.addTask(
+        function(minion) {
+          minion.report()
+        },
+        function() {
+          expect(tweetyLog).to.have.members(["perch", "cage", "cat"])
+          done.ish("minion is still waiting")
+          releaseTweety()
+        }
+      )      
+    }
+
+    function releaseTweety() {
+      sylvester.quit()
+      waiter.release()
+      addAFreshTask()
+    }
+
+    function addAFreshTask() {
+      dispatcher.addTask(
+        function(minion) {
+          minion.report("last free job..")
+        },
+        function(message) {
+          expect(message).to.equal("last free job..tweety did it!")
+          done.ish("released minion got the last job")
+          expect(tweetyLog).to.deep.equal(["perch"])
+          done.ish("state got reset")
+
+          done()
+        }
+      )
+    }
+
+
   }
 )

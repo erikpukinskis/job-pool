@@ -7,12 +7,15 @@ module.exports = library.export(
     function Dispatcher() {
       this.tasks = []
       this.workers = []
+      this.retainers = []
       this.working = false
     }
 
     Dispatcher.buildTask =
       function(args) {
-        var task = {}
+        var task = {
+          clean: true
+        }
 
         for(var i=0; i<args.length; i++) {
           var arg = args[i]
@@ -58,6 +61,13 @@ module.exports = library.export(
 
     Dispatcher.prototype.requestWork =
       function(callback) {
+
+        if (this.retainers.length > 0) {
+          var retainer = this.retainers.pop()
+          retainer(worker)
+          return
+        }
+
         this.workers.push(callback)
         this.work()
         var workers = this.workers
@@ -69,6 +79,54 @@ module.exports = library.export(
             callback.__nrtvMinionQuit = true
           }
         }
+      }
+
+    Dispatcher.prototype._getWorker =
+      function(callback) {
+        if (this.workers.length > 0) {
+          var worker = this.workers.shift()
+          callback(worker)
+        } else {
+          this.retainers.push(callback)
+        }
+      }
+
+    Dispatcher.prototype.retainWorker =
+      function() {
+        var centralDispatch = this
+
+        var retainer = {
+          dispatcher: new Dispatcher(),
+          isClean: false,
+          addTask: function() {
+            var task = Dispatcher.buildTask(arguments)
+
+            if (!this.isClean) {
+              task.clean = true
+              this.isClean = true
+            } else {
+              task.clean = false
+            }
+            
+            this.dispatcher.addTask(task)
+          },
+          release: function() {
+            centralDispatch.requestWork(this.worker)
+          },
+          getWorker: function() {
+            var retainer = this
+            centralDispatch._getWorker(
+              function(worker) {
+                retainer.worker = worker
+                retainer.dispatcher.requestWork(worker)
+              }
+            )            
+          }
+        }
+
+        retainer.getWorker()
+
+        return retainer
       }
 
     Dispatcher.prototype.work =
@@ -90,13 +148,25 @@ module.exports = library.export(
         }
 
         var queue = this
+        var tasks = this.tasks
 
-        var worker = this.workers.shift()
-        var original = this.tasks.shift()
+        this._getWorker(
+          function(worker) {
+            var original = tasks.shift()
 
-        function checkForMore(queue, worker, message) {
+            var task = shallowClone(original)
 
-          original.callback(message)
+            task.callback = checkForMore.bind(null, queue, worker, original.callback)
+
+            worker(task)
+
+            queue._work()
+          }
+        )
+
+        function checkForMore(queue, worker, callback, message) {
+
+          callback(message)
 
           if (!worker.__nrtvMinionQuit) {
             queue.workers.push(worker)
@@ -105,13 +175,7 @@ module.exports = library.export(
           queue._work()
         }
 
-        var task = shallowClone(original)
 
-        task.callback = checkForMore.bind(null, queue, worker)
-
-        worker(task)
-
-        this._work()
       }
 
     function shallowClone(object) {
