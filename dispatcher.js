@@ -20,8 +20,9 @@ module.exports = library.export(
         for(var i=0; i<args.length; i++) {
           var arg = args[i]
           var isFunction = typeof arg == "function"
+          var hasFunction = task.func || task.funcSource
 
-          if (isFunction && !task.func) {
+          if (isFunction && !hasFunction) {
             task.func = arg
           } else if (isFunction) {
             task.callback = arg
