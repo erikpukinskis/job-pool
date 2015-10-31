@@ -92,41 +92,56 @@ module.exports = library.export(
       }
 
     Dispatcher.prototype.retainWorker =
-      function() {
+      function(callback) {
+        if (typeof callback == "function") {
+          throw new Error("retainWorker doesn't take a callback. It just gives you a reference to a new dispatcher which will start working when your retained worker shows up.")
+        }
+
         var centralDispatch = this
 
-        var retainer = {
-          dispatcher: new Dispatcher(),
-          isClean: false,
-          addTask: function() {
-            var task = Dispatcher.buildTask(arguments)
-
-            if (!this.isClean) {
-              task.clean = true
-              this.isClean = true
-            } else {
-              task.clean = false
-            }
-            
-            this.dispatcher.addTask(task)
-          },
-          resign: function() {
-            centralDispatch.requestWork(this.worker)
-          },
-          getWorker: function() {
-            var retainer = this
-            centralDispatch._getWorker(
-              function(worker) {
-                retainer.worker = worker
-                retainer.dispatcher.requestWork(worker)
-              }
-            )            
-          }
-        }
+        var retainer = new Retainer(this)
 
         retainer.getWorker()
 
         return retainer
+      }
+
+
+    function Retainer(parent) {
+      this.centralDispatch = parent
+      this.dispatcher = new Dispatcher()
+      this.isClean = false
+    }
+
+    Retainer.prototype.addTask =
+      function() {
+        var task = Dispatcher.buildTask(arguments)
+
+        if (!this.isClean) {
+          task.clean = true
+          this.isClean = true
+        } else {
+          task.clean = false
+        }
+        
+        this.dispatcher.addTask(task)
+      }
+
+    Retainer.prototype.resign =
+      function() {
+        this.centralDispatch.requestWork(this.worker)
+      }
+
+    Retainer.prototype.getWorker =
+      function() {
+        var retainer = this
+        this.centralDispatch._getWorker(
+          function(worker) {
+            retainer.worker = worker
+
+            retainer.dispatcher.requestWork(worker)
+          }
+        )
       }
 
     Dispatcher.prototype.work =
