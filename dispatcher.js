@@ -64,7 +64,7 @@ module.exports = library.export(
 
         if (this.retainers.length > 0) {
           var retainer = this.retainers.pop()
-          retainer(worker)
+          retainer(callback)
           return
         }
 
