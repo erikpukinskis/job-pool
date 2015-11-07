@@ -11,11 +11,17 @@ module.exports = library.export(
       this.working = false
     }
 
+    Dispatcher.taskIds = {}
+
     Dispatcher.buildTask =
       function(args) {
         var task = {
           clean: true
         }
+
+        do {
+          task.id = Math.random().toString(36).split(".")[1]
+        } while(Dispatcher.taskIds[task.id])
 
         for(var i=0; i<args.length; i++) {
           var arg = args[i]

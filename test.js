@@ -19,6 +19,7 @@ test.using(
 
     var dougie = dispatcher.requestWork(
       function doug(task) {
+        expect(task.id).to.be.defined
         task.func(function(message) {
           task.callback(message+" (via Doug)")
         })
