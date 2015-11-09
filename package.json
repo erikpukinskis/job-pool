@@ -1,6 +1,6 @@
 {
   "name": "nrtv-dispatcher",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "manage a queue of workers and work to do",
   "main": "dispatcher.js",
   "repository": {
