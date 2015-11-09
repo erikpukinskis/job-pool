@@ -35,7 +35,7 @@ module.exports = library.export(
           } else if (Array.isArray(arg)) {
             task.args = arg
           } else if (typeof arg == "object") {
-            task = arg
+            extend(task, arg)
           } else {
             throw Error("Not sure what to do with "+JSON.stringify(arg)+" in dispatcher.addTask. Expecting a function or two and optionally an array of arguments.")
           }
@@ -49,6 +49,14 @@ module.exports = library.export(
 
         return task
       }
+
+    function extend(fresh, object) {
+      for(var key in object) {
+        fresh[key] = object[key]
+      }
+      return fresh
+    }
+
     Dispatcher.prototype.addTask =
       function() {
         var task = Dispatcher.buildTask(arguments)

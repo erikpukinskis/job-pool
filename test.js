@@ -247,6 +247,32 @@ test.using(
       )
     }
 
-
   }
 )
+
+
+test.using(
+  "can add arbitrary keys to a task",
+  ["./"],
+  function(expect, done, Dispatcher) {
+
+    var dispatcher = new Dispatcher()
+
+    dispatcher.addTask(
+      function(callback) {
+        callback("one")
+      }, function ok() {
+        done()
+      },
+      {birdie: "toot toot!"}
+    )
+
+    dispatcher.requestWork(
+      function (task) {
+        expect(task.birdie).to.equal("toot toot!")
+        task.callback()
+      }
+    )
+  }
+)
+
