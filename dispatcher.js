@@ -16,7 +16,9 @@ module.exports = library.export(
     Dispatcher.buildTask =
       function(args) {
         var task = {
-          clean: true
+          isNrtvDispatcherTask: true,
+          clean: true,
+          options: {}
         }
 
         do {
@@ -27,6 +29,8 @@ module.exports = library.export(
           var arg = args[i]
           var isFunction = typeof arg == "function"
           var hasFunction = task.func || task.funcSource
+          var isObject = typeof arg == "object"
+          var isTask = isObject && arg.isNrtvDispatcherTask
 
           if (isFunction && !hasFunction) {
             task.func = arg
@@ -34,8 +38,10 @@ module.exports = library.export(
             task.callback = arg
           } else if (Array.isArray(arg)) {
             task.args = arg
-          } else if (typeof arg == "object") {
+          } else if (isTask) {
             extend(task, arg)
+          } else if (isObject) {
+            task.options = arg
           } else {
             throw Error("Not sure what to do with "+JSON.stringify(arg)+" in dispatcher.addTask. Expecting a function or two and optionally an array of arguments.")
           }
@@ -51,11 +57,11 @@ module.exports = library.export(
       }
 
     function extend(fresh, object) {
-      for(var key in object) {
-        fresh[key] = object[key]
+        for(var key in object) {
+          fresh[key] = object[key]
+        }
+        return fresh
       }
-      return fresh
-    }
 
     Dispatcher.prototype.addTask =
       function() {

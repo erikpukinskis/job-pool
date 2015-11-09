@@ -269,7 +269,7 @@ test.using(
 
     dispatcher.requestWork(
       function (task) {
-        expect(task.birdie).to.equal("toot toot!")
+        expect(task.options.birdie).to.equal("toot toot!")
         task.callback()
       }
     )
