@@ -85,11 +85,22 @@ module.exports = library.export(
 
         if (this.retainers.length > 0) {
           var retainer = this.retainers.pop()
+
+          if (!this.isRetainer) {
+            console.log("put worker on reatiner. "+this.workers.length+" in queue.")
+          }
+
           retainer(callback)
+
           return
         }
 
         this.workers.push(callback)
+
+        if (!this.isRetainer) {
+          console.log("Added worker to queue. "+this.workers.length+" waiting now.")
+        }
+
         this.work()
         var workers = this.workers
 
@@ -106,6 +117,11 @@ module.exports = library.export(
       function(callback) {
         if (this.workers.length > 0) {
           var worker = this.workers.shift()
+
+          if (!this.isRetainer) {
+            console.log("Checking out worker. "+this.workers.length+" left.")
+          }
+
           callback(worker)
         } else {
           this.retainers.push(callback)
@@ -131,6 +147,7 @@ module.exports = library.export(
     function Retainer(parent) {
       this.centralDispatch = parent
       this.dispatcher = new Dispatcher()
+      this.dispatcher.isRetainer = true
       this.isClean = false
     }
 
