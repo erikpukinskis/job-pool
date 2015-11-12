@@ -87,7 +87,7 @@ module.exports = library.export(
           var retainer = this.retainers.pop()
 
           if (!this.isRetainer) {
-            console.log("put worker on reatiner. "+this.workers.length+" in queue.")
+            console.log("put worker on retainer. "+this.workers.length+" in queue.")
           }
 
           retainer(callback)
