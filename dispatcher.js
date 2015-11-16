@@ -83,7 +83,7 @@ module.exports = library.export(
     Dispatcher.prototype.requestWork =
       function(callback) {
         if (typeof callback != "function") {
-          throw new Error("You're trying to register "+callback.toString.slice(0,40)+" as a worker, but it's not a function!")
+          throw new Error("You're trying to register "+callback+" as a worker, but it's not a function!")
         }
 
         if (this.retainers.length > 0) {
@@ -223,7 +223,7 @@ module.exports = library.export(
         function checkForMore(queue, worker, callback, message) {
 
           if (typeof worker != "function") {
-            throw new Error("You're trying to throw "+worker.toString.slice(0,40)+" back into the pool, but it's not a function!")
+            throw new Error("You're trying to throw "+worker.toString+" back into the pool, but it's not a function!")
           }
 
           callback(message)
