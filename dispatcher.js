@@ -170,7 +170,9 @@ module.exports = library.export(
 
     Retainer.prototype.resign =
       function() {
-        this.centralDispatch.requestWork(this.worker)
+        if (this.worker) {
+          this.centralDispatch.requestWork(this.worker)
+        }
       }
 
     Retainer.prototype.getWorker =

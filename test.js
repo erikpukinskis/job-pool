@@ -276,3 +276,15 @@ test.using(
   }
 )
 
+
+test.using(
+  "can resign before getting a worker",
+  ["./"],
+  function(expect, done, Dispatcher) {
+    var dispatcher = new Dispatcher()
+    var retainer = dispatcher.retainWorker()
+    retainer.resign()
+    done()
+  }
+)
+
