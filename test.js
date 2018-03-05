@@ -3,19 +3,19 @@ var runTest = require("run-test")(require)
 runTest(
   "adding tasks while multiple minions do work",
   ["./"],
-  function(expect, done, Dispatcher) {
+  function(expect, done, JobPool) {
 
-    var dispatcher = new Dispatcher()
+    var jobPool = new JobPool()
 
     var results = []
 
-    dispatcher.addTask(function(callback) {
+    jobPool.addTask(function(callback) {
       callback("one")
     }, function ok(message) {
       results[1] = message
     })
 
-    var dougie = dispatcher.requestWork(
+    var dougie = jobPool.requestWork(
       function doug(task) {
         expect(task.id).not.to.be.undefined
         task.func(function(message) {
@@ -27,7 +27,7 @@ runTest(
     expect(results[1]).to.equal("one (via Doug)")
     done.ish("Doug got the first job")
 
-    var barb = dispatcher.requestWork(
+    var barb = jobPool.requestWork(
       function barbara(task) {
         task.func(function(message) {
           task.callback(message+" (via Barbara)")
@@ -35,7 +35,7 @@ runTest(
       }
     )
 
-    dispatcher.addTask(function(callback) {
+    jobPool.addTask(function(callback) {
       callback("two")
     }, function two(message) {
       results[2] = message
@@ -44,7 +44,7 @@ runTest(
     expect(results[2]).to.equal("two (via Doug)")
     done.ish("Doug got the next job too, since he finished his work before Barbara joined")
 
-    var j = dispatcher.requestWork(
+    var j = jobPool.requestWork(
       function janet(task) {
         task.func(function(message) {
           task.callback(message+" (via Janet)")
@@ -52,7 +52,7 @@ runTest(
       }
     )
 
-    dispatcher.addTask(function(callback) {
+    jobPool.addTask(function(callback) {
       callback("three")
     }, function three(message) {
       results[3] = message
@@ -63,7 +63,7 @@ runTest(
 
     dougie.quit()
 
-    dispatcher.addTask(function(callback) {
+    jobPool.addTask(function(callback) {
       callback("four")
     }, function four(message) {
       results[4] = message
@@ -75,7 +75,7 @@ runTest(
     barb.quit()
     j.quit()
 
-    dispatcher.addTask(function(callback) {
+    jobPool.addTask(function(callback) {
       callback("five")
     }, function five(message) {
       results[5] = message
@@ -83,7 +83,7 @@ runTest(
 
     expect(results[5]).to.be.undefined
 
-    done.ish("world doesn't explode if the worker dispatcher dries up")
+    done.ish("world doesn't explode if the job pool dries up")
 
     done()
   }
@@ -92,9 +92,11 @@ runTest(
 runTest(
   "pass args on",
   ["./"],
-  function(expect, done, dispatcher) {
+  function(expect, done, JobPool) {
 
-    dispatcher.addTask(
+    var jobPool = new JobPool()
+    
+    jobPool.addTask(
       function takeCredit(callback, who) {
         callback(who+" did this.")
       },
@@ -106,7 +108,7 @@ runTest(
       }
     )
 
-    dispatcher.requestWork(
+    jobPool.requestWork(
       function worker(task) {
         if (task.args[0] != "Brett") {
           throw new Error("Who are you and what have you done with Brett!")
@@ -122,14 +124,14 @@ runTest(
 runTest(
   "worker waits",
   ["./"],
-  function(expect, done, Dispatcher) {
+  function(expect, done, JobPool) {
 
-    var dispatcher = new Dispatcher()
+    var jobPool = new JobPool()
 
     var tweetyFrame = ["perch", "cage", "cat"]
     var tweetyLog = []
 
-    var tweety = dispatcher.requestWork(
+    var tweety = jobPool.requestWork(
       function(task) {
 
         if (task.clean) {
@@ -148,7 +150,7 @@ runTest(
       }
     )
 
-    var sylvester = dispatcher
+    var sylvester = jobPool
     .requestWork(function(task) {
 
       task.func({
@@ -159,7 +161,7 @@ runTest(
 
     })
 
-    var waiter = dispatcher.retainWorker()
+    var waiter = jobPool.retainWorker()
 
     waiter.addTask(
       function(minion) {
@@ -176,7 +178,7 @@ runTest(
     }
 
     function addAFreshJob() {
-      dispatcher.addTask(
+      jobPool.addTask(
         scheming,
         function(message) {
           expect(message).to.equal("fruitless scheming..meow")
@@ -187,7 +189,7 @@ runTest(
     }
 
     function addAnotherFreshJob() {
-      dispatcher.addTask(
+      jobPool.addTask(
         scheming,
         function(message) {
           expect(message).to.equal("fruitless scheming..meow")
@@ -230,7 +232,7 @@ runTest(
     }
 
     function addAFreshTask() {
-      dispatcher.addTask(
+      jobPool.addTask(
         function(minion) {
           minion.report("last free job..")
         },
@@ -252,11 +254,11 @@ runTest(
 runTest(
   "can add arbitrary keys to a task",
   ["./"],
-  function(expect, done, Dispatcher) {
+  function(expect, done, JobPool) {
 
-    var dispatcher = new Dispatcher()
+    var jobPool = new JobPool()
 
-    dispatcher.addTask(
+    jobPool.addTask(
       function(callback) {
         callback("one")
       }, function ok() {
@@ -265,7 +267,7 @@ runTest(
       {birdie: "toot toot!"}
     )
 
-    dispatcher.requestWork(
+    jobPool.requestWork(
       function (task) {
         expect(task.options.birdie).to.equal("toot toot!")
         task.callback()
@@ -278,9 +280,9 @@ runTest(
 runTest(
   "can resign before getting a worker",
   ["./"],
-  function(expect, done, Dispatcher) {
-    var dispatcher = new Dispatcher()
-    var retainer = dispatcher.retainWorker()
+  function(expect, done, JobPool) {
+    var jobPool = new JobPool()
+    var retainer = jobPool.retainWorker()
     retainer.resign()
     done()
   }

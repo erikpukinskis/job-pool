@@ -1,9 +1,8 @@
 var library = require("module-library")(require)
 
 module.exports = library.export(
-  "nrtv-dispatcher",
-  [library.collective({})],
-  function(collective) {
+  "job-pool",
+  function() {
     function Dispatcher() {
       this.tasks = []
       this.workers = []
@@ -247,12 +246,6 @@ module.exports = library.export(
       }
       return fresh
     }
-
-    library.collectivize(
-      Dispatcher,
-      collective,
-      ["addTask", "requestWork"]
-    )
 
     return Dispatcher
   }

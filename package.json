@@ -1,11 +1,11 @@
 {
-  "name": "nrtv-dispatcher",
+  "name": "job-pool",
   "version": "0.16.0",
   "description": "manage a queue of workers and work to do",
-  "main": "dispatcher.js",
+  "main": "job-pool.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/erikpukinskis/nrtv-dispatcher.git"
+    "url": "https://github.com/erikpukinskis/job-pool.git"
   },
   "dependencies": {
     "module-library": "*"
