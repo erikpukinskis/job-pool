@@ -1,8 +1,6 @@
-var test = require("nrtv-test")(require)
+var runTest = require("run-test")(require)
 
-// test.only("worker waits")
-
-test.using(
+runTest(
   "adding tasks while multiple minions do work",
   ["./"],
   function(expect, done, Dispatcher) {
@@ -19,7 +17,7 @@ test.using(
 
     var dougie = dispatcher.requestWork(
       function doug(task) {
-        expect(task.id).to.be.defined
+        expect(task.id).not.to.be.undefined
         task.func(function(message) {
           task.callback(message+" (via Doug)")
         })
@@ -91,7 +89,7 @@ test.using(
   }
 )
 
-test.using(
+runTest(
   "pass args on",
   ["./"],
   function(expect, done, dispatcher) {
@@ -121,9 +119,9 @@ test.using(
 )
 
 
-test.using(
+runTest(
   "worker waits",
-  ["../dispatcher"],
+  ["./"],
   function(expect, done, Dispatcher) {
 
     var dispatcher = new Dispatcher()
@@ -251,7 +249,7 @@ test.using(
 )
 
 
-test.using(
+runTest(
   "can add arbitrary keys to a task",
   ["./"],
   function(expect, done, Dispatcher) {
@@ -277,7 +275,7 @@ test.using(
 )
 
 
-test.using(
+runTest(
   "can resign before getting a worker",
   ["./"],
   function(expect, done, Dispatcher) {
