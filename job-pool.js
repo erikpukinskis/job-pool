@@ -5,8 +5,9 @@ module.exports = library.export(
   function() {
     function Dispatcher() {
       this.tasks = []
-      this.workers = []
-      this.retainers = []
+      // These two arrays, waitingForWork and waitingForWorker are just arrays of functions. The job pool is basically just a pool that matches up functions that want something to be done with functions that want to do things.
+      this.waitingForWork = []
+      this.waitingForWorker = []
       this.working = false
     }
 
@@ -80,53 +81,69 @@ module.exports = library.export(
     }
 
     Dispatcher.prototype.requestWork =
-      function(callback) {
-        if (typeof callback != "function") {
+      function(worker) {
+        if (typeof worker != "function") {
           throw new Error("You're trying to register "+callback+" as a worker, but it's not a function!")
         }
 
-        if (this.retainers.length > 0) {
-          var retainer = this.retainers.pop()
+        if (this.waitingForWorker.length > 0) {
+          var work = this.waitingForWorker.pop()
 
           if (!this.isRetainer) {
-            console.log("put worker on retainer. "+this.workers.length+" in queue.")
+            console.log("put worker on retainer. "+this.waitingForWork.length+" in queue.")
           }
 
-          retainer(callback)
+          work(worker)
 
           return
         }
 
-        this.workers.push(callback)
+        this.waitingForWork.push(worker)
 
         if (!this.isRetainer) {
-          console.log("Added worker to queue. "+this.workers.length+" waiting now.")
+          console.log("Added worker to queue. "+this.waitingForWork.length+" waiting now.")
         }
 
-        this.work()
-        var workers = this.workers
+        var waitingForWork = this.waitingForWork
 
-        return {
+        var controls = {
           quit: function() {
-            var i = workers.indexOf(callback)
-            workers.splice(i, 1)
-            callback.__nrtvMinionQuit = true
+            var i = waitingForWork.indexOf(worker)
+            waitingForWork.splice(i, 1)
+            worker.__nrtvMinionQuit = true
           }
         }
+
+        // Just in case we haven't started working yet
+        this.work()
+
+        return controls
       }
 
     Dispatcher.prototype._getWorker =
-      function(callback) {
-        if (this.workers.length > 0) {
-          var worker = this.workers.shift()
+      function(work) {
+        if (this.waitingForWork.length > 0) {
+          var worker = this.waitingForWork.shift()
 
           if (!this.isRetainer) {
-            console.log("Checking out worker. "+this.workers.length+" left.")
+            console.log("Checking out worker. "+this.waitingForWork.length+" left.")
           }
 
-          callback(worker)
+          work(worker)
         } else {
-          this.retainers.push(callback)
+          var waitingForWorker = this.waitingForWorker
+
+          waitingForWorker.push(work)
+
+          function giveUpOnWaitingForWorker() {
+            var i = waitingForWorker.indexOf(
+              work)
+            if (i < 0) return
+            console.log("Giving up on work:\n", work.toString())
+            waitingForWorker.splice(i, 1)
+          }
+
+          return giveUpOnWaitingForWorker
         }
       }
 
@@ -135,8 +152,6 @@ module.exports = library.export(
         if (typeof callback == "function") {
           throw new Error("retainWorker doesn't take a callback. It just gives you a reference to a new dispatcher which will start working when your retained worker shows up.")
         }
-
-        var centralDispatch = this
 
         var retainer = new Retainer(this)
 
@@ -163,21 +178,26 @@ module.exports = library.export(
         } else {
           task.clean = false
         }
-        
+
         this.dispatcher.addTask(task)
       }
 
     Retainer.prototype.resign =
       function() {
         if (this.worker) {
+          console.log("Relinquishing a worker back to the central pool:\n",this.worker.toString())
           this.centralDispatch.requestWork(this.worker)
+        }
+        if (this.giveUpOnWaitingForWorker) {
+          // We may not have been picked up by a worker at all, before giving up! In this case we need to inform central dispatch that we are no longer waiting for work.
+          this.giveUpOnWaitingForWorker()
         }
       }
 
     Retainer.prototype.getWorker =
       function() {
         var retainer = this
-        this.centralDispatch._getWorker(
+        retainer.giveUpOnWaitingForWorker = this.centralDispatch._getWorker(
           function(worker) {
             retainer.worker = worker
 
@@ -195,7 +215,7 @@ module.exports = library.export(
     Dispatcher.prototype._work =
       function() {
         var noTasks = this.tasks.length < 1
-        var noWorkers = this.workers.length < 1
+        var noWorkers = this.waitingForWork.length < 1
 
         if (noTasks || noWorkers) {
           this.working = false
@@ -230,7 +250,7 @@ module.exports = library.export(
           callback(message)
 
           if (!worker.__nrtvMinionQuit) {
-            queue.workers.push(worker)
+            queue.waitingForWork.push(worker)
           }
 
           queue._work()
