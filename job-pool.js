@@ -106,19 +106,18 @@ module.exports = library.export(
 
         var waitingForWork = this.waitingForWork
 
-        var controls = {
-          quit: function() {
-            var i = waitingForWork.indexOf(worker)
-            waitingForWork.splice(i, 1)
-            worker.__nrtvMinionQuit = true
-          }
-        }
-
         // Just in case we haven't started working yet
         this.work()
 
-        return controls
+        return resign.bind(this, worker)
       }
+
+    function resign(worker) {
+      var i = this.waitingForWork.indexOf(worker)
+      this.waitingForWork.splice(i, 1)
+      worker.__nrtvMinionQuit = true
+      console.log("Removed worker from queue.", this.waitingForWork.length, "waiting now")
+    }
 
     Dispatcher.prototype._getWorker =
       function(work) {
